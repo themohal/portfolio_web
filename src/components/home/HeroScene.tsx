@@ -85,7 +85,7 @@ export default function HeroScene() {
         >
           Hi, I&apos;m{" "}
           <span className="bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent">
-            Your Name
+            Muhammad Farjad Ali Raza
           </span>
         </motion.h1>
         <motion.p
