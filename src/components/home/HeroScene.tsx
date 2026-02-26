@@ -2,9 +2,10 @@
 
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Float, MeshDistortMaterial, Stars } from "@react-three/drei";
-import { useRef, Suspense } from "react";
+import { useRef, Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import type { Mesh } from "three";
+import { createClient } from "@/lib/supabase/client";
 
 function AnimatedSphere() {
   const meshRef = useRef<Mesh>(null);
@@ -66,6 +67,38 @@ function Scene() {
 }
 
 export default function HeroScene() {
+  const [heroTitle, setHeroTitle] = useState("Muhammad Farjad Ali Raza");
+  const [heroSubtitle, setHeroSubtitle] = useState(
+    "Full-Stack Developer \u00b7 Creative Technologist \u00b7 Problem Solver"
+  );
+
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from("site_settings")
+          .select("key, value")
+          .in("key", ["hero_title", "hero_subtitle"]);
+
+        if (data) {
+          for (const setting of data) {
+            if (setting.key === "hero_title" && typeof setting.value === "string") {
+              setHeroTitle(setting.value);
+            }
+            if (setting.key === "hero_subtitle" && typeof setting.value === "string") {
+              setHeroSubtitle(setting.value);
+            }
+          }
+        }
+      } catch {
+        // Keep defaults
+      }
+    }
+
+    fetchSettings();
+  }, []);
+
   return (
     <section className="relative h-screen w-full overflow-hidden">
       <div className="absolute inset-0">
@@ -85,7 +118,7 @@ export default function HeroScene() {
         >
           Hi, I&apos;m{" "}
           <span className="bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent">
-            Muhammad Farjad Ali Raza
+            {heroTitle}
           </span>
         </motion.h1>
         <motion.p
@@ -94,7 +127,7 @@ export default function HeroScene() {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="text-lg md:text-xl text-gray-400 max-w-2xl mb-8"
         >
-          Full-Stack Developer &middot; Creative Technologist &middot; Problem Solver
+          {heroSubtitle}
         </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -118,15 +151,17 @@ export default function HeroScene() {
       </div>
 
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10">
-        <motion.div
+        <motion.a
+          href="#about"
           animate={{ y: [0, 10, 0] }}
           transition={{ repeat: Infinity, duration: 1.5 }}
-          className="text-gray-400"
+          className="text-gray-400 hover:text-white transition-colors cursor-pointer block"
+          aria-label="Scroll down"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
           </svg>
-        </motion.div>
+        </motion.a>
       </div>
     </section>
   );

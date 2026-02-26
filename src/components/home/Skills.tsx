@@ -1,38 +1,49 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { createClient } from "@/lib/supabase/client";
 
-const skillCategories = [
-  {
-    title: "Frontend",
-    skills: [
-      { name: "React / Next.js", level: 95 },
-      { name: "TypeScript", level: 90 },
-      { name: "Tailwind CSS", level: 92 },
-      { name: "Three.js", level: 75 },
-    ],
-  },
-  {
-    title: "Backend",
-    skills: [
-      { name: "Node.js", level: 88 },
-      { name: "Python", level: 82 },
-      { name: "PostgreSQL", level: 85 },
-      { name: "REST / GraphQL", level: 87 },
-    ],
-  },
-  {
-    title: "Tools & DevOps",
-    skills: [
-      { name: "Git / GitHub", level: 93 },
-      { name: "Docker", level: 78 },
-      { name: "CI/CD", level: 80 },
-      { name: "AWS / Vercel", level: 82 },
-    ],
-  },
-];
+interface SkillCategory {
+  title: string;
+  skills: { name: string; level: number }[];
+}
 
 export default function Skills() {
+  const [skillCategories, setSkillCategories] = useState<SkillCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchSkills() {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from("skills")
+          .select("*")
+          .order("display_order", { ascending: true });
+
+        if (data && data.length > 0) {
+          const grouped: Record<string, { name: string; level: number }[]> = {};
+          for (const skill of data) {
+            if (!grouped[skill.category]) grouped[skill.category] = [];
+            grouped[skill.category].push({ name: skill.name, level: skill.proficiency });
+          }
+          setSkillCategories(
+            Object.entries(grouped).map(([title, skills]) => ({ title, skills }))
+          );
+        }
+      } catch {
+        // silently fail
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchSkills();
+  }, []);
+
+  if (loading || skillCategories.length === 0) return null;
+
   return (
     <section id="skills" className="py-24 px-4">
       <div className="max-w-5xl mx-auto">

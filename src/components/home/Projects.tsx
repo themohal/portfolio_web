@@ -1,44 +1,45 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Card from "@/components/ui/Card";
+import { createClient } from "@/lib/supabase/client";
 
-const projects = [
-  {
-    title: "E-Commerce Platform",
-    description:
-      "A full-stack e-commerce solution with real-time inventory management, payment processing, and admin dashboard.",
-    tags: ["Next.js", "TypeScript", "Stripe", "PostgreSQL"],
-    live: "#",
-    github: "#",
-  },
-  {
-    title: "AI Chat Application",
-    description:
-      "Real-time chat application powered by AI with natural language processing and smart reply suggestions.",
-    tags: ["React", "Node.js", "WebSocket", "OpenAI"],
-    live: "#",
-    github: "#",
-  },
-  {
-    title: "Task Management Tool",
-    description:
-      "Collaborative project management tool with drag-and-drop boards, real-time updates, and team features.",
-    tags: ["Vue.js", "Firebase", "Tailwind", "PWA"],
-    live: "#",
-    github: "#",
-  },
-  {
-    title: "Analytics Dashboard",
-    description:
-      "Interactive data visualization dashboard with custom charts, filters, and export capabilities.",
-    tags: ["React", "D3.js", "Python", "FastAPI"],
-    live: "#",
-    github: "#",
-  },
-];
+interface ProjectDisplay {
+  id: string;
+  title: string;
+  description: string;
+  tags: string[];
+  live_url: string | null;
+  github_url: string | null;
+}
 
 export default function Projects() {
+  const [projects, setProjects] = useState<ProjectDisplay[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchProjects() {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from("projects")
+          .select("*")
+          .order("display_order", { ascending: true });
+
+        setProjects((data as ProjectDisplay[]) || []);
+      } catch {
+        // silently fail
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchProjects();
+  }, []);
+
+  if (loading || projects.length === 0) return null;
+
   return (
     <section id="projects" className="py-24 px-4 bg-white/[0.02]">
       <div className="max-w-6xl mx-auto">
@@ -55,7 +56,7 @@ export default function Projects() {
         <div className="grid md:grid-cols-2 gap-6">
           {projects.map((project, index) => (
             <motion.div
-              key={project.title}
+              key={project.id}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -75,18 +76,26 @@ export default function Projects() {
                   ))}
                 </div>
                 <div className="flex gap-4">
-                  <a
-                    href={project.live}
-                    className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-                  >
-                    Live Demo &rarr;
-                  </a>
-                  <a
-                    href={project.github}
-                    className="text-sm text-gray-400 hover:text-gray-300 transition-colors"
-                  >
-                    GitHub &rarr;
-                  </a>
+                  {project.live_url && (
+                    <a
+                      href={project.live_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                    >
+                      Live Demo &rarr;
+                    </a>
+                  )}
+                  {project.github_url && (
+                    <a
+                      href={project.github_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-gray-400 hover:text-gray-300 transition-colors"
+                    >
+                      GitHub &rarr;
+                    </a>
+                  )}
                 </div>
               </Card>
             </motion.div>
