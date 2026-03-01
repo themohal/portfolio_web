@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import BlogContent from "@/components/blog/BlogContent";
 
 interface Heading {
   id: string;
@@ -15,7 +14,7 @@ function slugifyHeading(text: string) {
     .replace(/[^\w\s-]/g, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
-    .trim();
+    .replace(/^-+|-+$/g, "");
 }
 
 function ReadingProgressBar() {
@@ -68,10 +67,20 @@ function BackToTopButton() {
   );
 }
 
-function TableOfContents({ headings }: { headings: Heading[] }) {
+function TableOfContents({
+  headings,
+  contentRef,
+}: {
+  headings: Heading[];
+  contentRef: React.RefObject<HTMLDivElement | null>;
+}) {
   const [activeId, setActiveId] = useState<string>("");
 
   useEffect(() => {
+    if (!contentRef.current) return;
+    const els = contentRef.current.querySelectorAll("h1, h2, h3");
+    if (els.length === 0) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -83,15 +92,22 @@ function TableOfContents({ headings }: { headings: Heading[] }) {
       { rootMargin: "0% 0% -70% 0%", threshold: 0 }
     );
 
-    headings.forEach(({ id }) => {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    });
-
+    els.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, [headings]);
+  }, [headings, contentRef]);
 
   if (headings.length < 2) return null;
+
+  function scrollToHeading(id: string) {
+    if (!contentRef.current) return;
+    const el = contentRef.current.querySelector(`#${CSS.escape(id)}`);
+    if (el) {
+      const top =
+        el.getBoundingClientRect().top + window.scrollY - 100;
+      window.scrollTo({ top, behavior: "smooth" });
+      setActiveId(id);
+    }
+  }
 
   return (
     <aside className="hidden xl:block fixed top-32 left-[max(1rem,calc(50%-42rem))] w-52 text-sm">
@@ -105,7 +121,7 @@ function TableOfContents({ headings }: { headings: Heading[] }) {
             href={`#${h.id}`}
             onClick={(e) => {
               e.preventDefault();
-              document.getElementById(h.id)?.scrollIntoView({ behavior: "smooth" });
+              scrollToHeading(h.id);
             }}
             className={`block transition-colors leading-snug cursor-pointer ${
               h.level === 3 ? "pl-3" : ""
@@ -213,48 +229,64 @@ export default function BlogContentClient({
   postTitle: string;
 }) {
   const [headings, setHeadings] = useState<Heading[]>([]);
-  const [readTime, setReadTime] = useState<number>(0);
+  const [readTime, setReadTime] = useState(0);
   const [postUrl, setPostUrl] = useState("");
+  const [html, setHtml] = useState("");
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // Generate HTML once on client to extract headings + inject IDs
-  const { generateHTML } = require("@tiptap/react");
-  const StarterKit = require("@tiptap/starter-kit").default;
-  const ImageExtension = require("@tiptap/extension-image").default;
-  const LinkExtension = require("@tiptap/extension-link").default;
-
-  let html = "<p>Unable to render content.</p>";
-  try {
-    html = generateHTML(content as Parameters<typeof generateHTML>[0], [
-      StarterKit,
-      ImageExtension,
-      LinkExtension.configure({ openOnClick: false }),
-    ]);
-  } catch {
-    // fallback
-  }
-
+  // Generate HTML client-side only, then inject heading IDs
   useEffect(() => {
-    setPostUrl(window.location.href);
-    const extracted = extractHeadings(html);
-    setHeadings(extracted);
-    setReadTime(estimateReadTime(html));
+    const { generateHTML } = require("@tiptap/react");
+    const StarterKit = require("@tiptap/starter-kit").default;
+    const ImageExtension = require("@tiptap/extension-image").default;
+    const LinkExtension = require("@tiptap/extension-link").default;
 
-    // Inject IDs into actual rendered DOM headings
-    if (contentRef.current) {
-      const els = contentRef.current.querySelectorAll("h1, h2, h3");
-      els.forEach((el) => {
-        const text = el.textContent || "";
-        el.id = slugifyHeading(text);
-      });
+    let rendered = "";
+    try {
+      rendered = generateHTML(content as Parameters<typeof import("@tiptap/react").generateHTML>[0], [
+        StarterKit,
+        ImageExtension,
+        LinkExtension.configure({ openOnClick: false }),
+      ]);
+    } catch {
+      rendered = "<p>Unable to render content.</p>";
     }
+
+    setHtml(rendered);
+    setPostUrl(window.location.href);
+    setReadTime(estimateReadTime(rendered));
+    setHeadings(extractHeadings(rendered));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Inject IDs after content is rendered in the DOM
+  useEffect(() => {
+    if (!html || !contentRef.current) return;
+    const els = contentRef.current.querySelectorAll("h1, h2, h3");
+    els.forEach((el) => {
+      const text = el.textContent || "";
+      el.id = slugifyHeading(text);
+      (el as HTMLElement).style.scrollMarginTop = "100px";
+    });
+  }, [html]);
+
+  if (!html) {
+    return (
+      <div className="space-y-4 animate-pulse">
+        <div className="h-4 bg-white/10 rounded w-1/4" />
+        <div className="h-4 bg-white/5 rounded w-full" />
+        <div className="h-4 bg-white/5 rounded w-full" />
+        <div className="h-4 bg-white/5 rounded w-3/4" />
+        <div className="h-4 bg-white/5 rounded w-full" />
+        <div className="h-4 bg-white/5 rounded w-5/6" />
+      </div>
+    );
+  }
 
   return (
     <>
       <ReadingProgressBar />
-      <TableOfContents headings={headings} />
+      <TableOfContents headings={headings} contentRef={contentRef} />
 
       {readTime > 0 && (
         <p className="text-xs text-gray-500 mb-8 flex items-center gap-1.5">
@@ -268,6 +300,7 @@ export default function BlogContentClient({
       <div
         ref={contentRef}
         className="prose-blog"
+        suppressHydrationWarning
         dangerouslySetInnerHTML={{ __html: html }}
       />
 
