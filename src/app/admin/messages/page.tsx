@@ -32,13 +32,23 @@ export default function AdminMessagesPage() {
 
   async function toggleRead(msg: ContactMessage) {
     const newStatus = !msg.is_read;
-    await supabase.from("messages").update({ is_read: newStatus }).eq("id", msg.id);
+    const { error } = await supabase.from("messages").update({ is_read: newStatus }).eq("id", msg.id);
+    if (error) {
+      console.error("Failed to update message:", error.message);
+      alert("Failed to update message. Check RLS policies for the messages table.");
+      return;
+    }
     setMessages(messages.map((m) => (m.id === msg.id ? { ...m, is_read: newStatus } : m)));
   }
 
   async function deleteMessage(id: string) {
     if (!confirm("Delete this message?")) return;
-    await supabase.from("messages").delete().eq("id", id);
+    const { error } = await supabase.from("messages").delete().eq("id", id);
+    if (error) {
+      console.error("Failed to delete message:", error.message);
+      alert("Failed to delete message. Check RLS policies for the messages table.");
+      return;
+    }
     setMessages(messages.filter((m) => m.id !== id));
   }
 

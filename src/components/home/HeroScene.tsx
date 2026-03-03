@@ -2,7 +2,7 @@
 
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Float, MeshDistortMaterial, Stars } from "@react-three/drei";
-import { useRef, Suspense, useEffect, useState } from "react";
+import { useRef, Suspense, useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import type { Mesh } from "three";
 import { createClient } from "@/lib/supabase/client";
@@ -66,11 +66,41 @@ function Scene() {
   );
 }
 
+function useTypingEffect(text: string, speed: number = 50, delay: number = 1200) {
+  const [displayText, setDisplayText] = useState("");
+  const [isComplete, setIsComplete] = useState(false);
+
+  useEffect(() => {
+    setDisplayText("");
+    setIsComplete(false);
+
+    const timeout = setTimeout(() => {
+      let i = 0;
+      const interval = setInterval(() => {
+        if (i < text.length) {
+          setDisplayText(text.slice(0, i + 1));
+          i++;
+        } else {
+          setIsComplete(true);
+          clearInterval(interval);
+        }
+      }, speed);
+
+      return () => clearInterval(interval);
+    }, delay);
+
+    return () => clearTimeout(timeout);
+  }, [text, speed, delay]);
+
+  return { displayText, isComplete };
+}
+
 export default function HeroScene() {
   const [heroTitle, setHeroTitle] = useState("Muhammad Farjad Ali Raza");
   const [heroSubtitle, setHeroSubtitle] = useState(
     "Full-Stack Developer \u00b7 Creative Technologist \u00b7 Problem Solver"
   );
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   useEffect(() => {
     async function fetchSettings() {
@@ -93,11 +123,19 @@ export default function HeroScene() {
         }
       } catch {
         // Keep defaults
+      } finally {
+        setSettingsLoaded(true);
       }
     }
 
     fetchSettings();
   }, []);
+
+  const { displayText: typedSubtitle, isComplete: subtitleComplete } = useTypingEffect(
+    heroSubtitle,
+    40,
+    1500
+  );
 
   return (
     <section className="relative h-screen w-full overflow-hidden">
@@ -109,44 +147,88 @@ export default function HeroScene() {
         </Canvas>
       </div>
 
+      {/* Scan line overlay */}
+      <div className="absolute inset-0 pointer-events-none z-[5] scan-line" />
+
+      {/* Corner brackets - tech HUD feel */}
+      <div className="absolute top-6 left-6 w-12 h-12 border-l-2 border-t-2 border-blue-500/30 z-10" />
+      <div className="absolute top-6 right-6 w-12 h-12 border-r-2 border-t-2 border-blue-500/30 z-10" />
+      <div className="absolute bottom-20 left-6 w-12 h-12 border-l-2 border-b-2 border-blue-500/30 z-10" />
+      <div className="absolute bottom-20 right-6 w-12 h-12 border-r-2 border-b-2 border-blue-500/30 z-10" />
+
       <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-4">
+        {/* Greeting label */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="mb-4"
+        >
+          <span className="px-4 py-1.5 text-xs font-mono tracking-[0.3em] uppercase text-blue-400 border border-blue-500/30 rounded-full bg-blue-500/5">
+            &lt; Welcome /&gt;
+          </span>
+        </motion.div>
+
+        {/* Main title with glitch */}
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
           className="text-5xl md:text-7xl font-bold text-white mb-4"
         >
           Hi, I&apos;m{" "}
-          <span className="bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent">
+          <span
+            className="glitch-text bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent"
+            data-text={heroTitle}
+          >
             {heroTitle}
           </span>
         </motion.h1>
-        <motion.p
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="text-lg md:text-xl text-gray-400 max-w-2xl mb-8"
+
+        {/* Typed subtitle */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 1.2 }}
+          className="h-8 mb-8"
         >
-          {heroSubtitle}
-        </motion.p>
+          <p className={`text-lg md:text-xl text-gray-400 font-mono ${!subtitleComplete ? 'typing-cursor' : ''}`}>
+            {typedSubtitle}
+          </p>
+        </motion.div>
+
+        {/* CTA buttons */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
+          transition={{ duration: 0.8, delay: 0.8 }}
           className="flex gap-4"
         >
           <a
             href="#projects"
-            className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all shadow-lg shadow-blue-600/25"
+            className="tech-btn px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all shadow-lg shadow-blue-600/25"
           >
             View Projects
           </a>
           <a
             href="#contact"
-            className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all shadow-lg shadow-blue-600/25"
+            className="tech-btn px-8 py-3 border border-blue-500/40 hover:border-blue-400 text-blue-400 hover:text-white font-medium rounded-lg transition-all hover:bg-blue-500/10"
           >
             Contact Me
           </a>
+        </motion.div>
+
+        {/* Status bar */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 1.8 }}
+          className="absolute bottom-24 left-1/2 -translate-x-1/2 flex items-center gap-3 text-xs font-mono text-gray-600"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+          <span>SYS.STATUS: ONLINE</span>
+          <span className="text-gray-700">|</span>
+          <span>SCROLL TO EXPLORE</span>
         </motion.div>
       </div>
 

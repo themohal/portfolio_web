@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState, useRef } from "react";
+import { motion, useInView } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 
 const defaultParagraphs = [
@@ -14,6 +14,42 @@ const defaultStats = [
   { label: "Projects", value: "20+" },
   { label: "Technologies", value: "10+" },
 ];
+
+function AnimatedCounter({ value }: { value: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const isInView = useInView(ref, { once: true });
+  const [display, setDisplay] = useState("0");
+
+  useEffect(() => {
+    if (!isInView) return;
+
+    const numericMatch = value.match(/^(\d+)/);
+    if (!numericMatch) {
+      setDisplay(value);
+      return;
+    }
+
+    const target = parseInt(numericMatch[1]);
+    const suffix = value.slice(numericMatch[1].length);
+    const duration = 1500;
+    const steps = 30;
+    const stepTime = duration / steps;
+    let current = 0;
+
+    const timer = setInterval(() => {
+      current += target / steps;
+      if (current >= target) {
+        current = target;
+        clearInterval(timer);
+      }
+      setDisplay(Math.floor(current) + suffix);
+    }, stepTime);
+
+    return () => clearInterval(timer);
+  }, [isInView, value]);
+
+  return <span ref={ref}>{display}</span>;
+}
 
 export default function About() {
   const [paragraphs, setParagraphs] = useState(defaultParagraphs);
@@ -51,16 +87,19 @@ export default function About() {
   }, []);
 
   return (
-    <section id="about" className="py-24 px-4">
-      <div className="max-w-5xl mx-auto">
+    <section id="about" className="py-24 px-4 tech-grid-bg">
+      <div className="max-w-5xl mx-auto relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">About Me</h2>
-          <div className="w-20 h-1 bg-blue-600 mb-8 rounded-full" />
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-blue-500 font-mono text-sm tracking-wider opacity-60">01.</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-white neon-text">About Me</h2>
+          </div>
+          <div className="w-20 h-0.5 bg-gradient-to-r from-blue-600 via-purple-600 to-transparent mb-8 neon-glow rounded-full" />
         </motion.div>
 
         <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -70,7 +109,7 @@ export default function About() {
             transition={{ duration: 0.6, delay: 0.2 }}
             viewport={{ once: true }}
           >
-            <div className="w-64 h-64 mx-auto md:mx-0 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center overflow-hidden">
+            <div className="tech-photo-frame w-64 h-64 mx-auto md:mx-0 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center overflow-hidden tech-border">
               {photo ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={photo} alt="Profile" className="w-full h-full object-cover" />
@@ -88,18 +127,40 @@ export default function About() {
             className="space-y-4"
           >
             {paragraphs.map((text, i) => (
-              <p key={i} className="text-gray-300 leading-relaxed">
+              <motion.p
+                key={i}
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 + i * 0.15 }}
+                viewport={{ once: true }}
+                className="text-gray-300 leading-relaxed"
+              >
                 {text}
-              </p>
+              </motion.p>
             ))}
-            <div className="flex gap-4 pt-4">
-              {stats.map((stat) => (
-                <div key={stat.label} className="text-center">
-                  <p className="text-2xl font-bold text-white">{stat.value}</p>
-                  <p className="text-sm text-gray-400">{stat.label}</p>
-                </div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
+              viewport={{ once: true }}
+              className="flex gap-6 pt-6"
+            >
+              {stats.map((stat, i) => (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4, delay: 0.7 + i * 0.1 }}
+                  viewport={{ once: true }}
+                  className="text-center px-4 py-3 rounded-lg bg-white/5 border border-white/5 hover:border-blue-500/30 transition-all duration-300"
+                >
+                  <p className="text-2xl font-bold stat-value">
+                    <AnimatedCounter value={stat.value} />
+                  </p>
+                  <p className="text-xs font-mono text-gray-500 uppercase tracking-wider mt-1">{stat.label}</p>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </motion.div>
         </div>
       </div>
