@@ -143,18 +143,24 @@ export default function Projects() {
               viewport={{ once: true }}
             >
               <TiltCard>
-                <div className="holo-card group flex flex-col rounded-xl bg-white/5 border border-white/10 hover:border-blue-500/30 transition-all duration-500 backdrop-blur-sm hover:bg-white/[0.07] overflow-hidden">
+                <div className="holo-card group h-[450px] flex flex-col rounded-xl bg-white/5 border border-white/10 hover:border-blue-500/30 transition-all duration-500 backdrop-blur-sm hover:bg-white/[0.07] overflow-hidden">
                   {/* Cover image */}
-                  {project.cover_image && (
-                    <div className="relative w-full h-48 overflow-hidden">
-                      <img
-                        src={project.cover_image}
-                        alt={project.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 to-transparent" />
-                    </div>
-                  )}
+                  <div className="relative w-full h-[150px] overflow-hidden shrink-0">
+                    {project.cover_image ? (
+                      <>
+                        <img
+                          src={project.cover_image}
+                          alt={project.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 to-transparent" />
+                      </>
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-blue-500/10 via-gray-900 to-purple-500/10 flex items-center justify-center">
+                        <span className="text-gray-600 font-mono text-sm">{project.title}</span>
+                      </div>
+                    )}
+                  </div>
 
                   <div className="p-6 flex flex-col flex-grow">
                   {/* Project header with tech indicator */}
@@ -164,7 +170,7 @@ export default function Projects() {
 
                   <ExpandableDescription text={project.description} />
 
-                  <div className="flex flex-wrap gap-2 mb-4">
+                  <div className="flex flex-wrap gap-2 mb-4 mt-auto">
                     {project.tags.map((tag) => (
                       <span
                         key={tag}
