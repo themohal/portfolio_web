@@ -212,7 +212,7 @@ export default function HeroScene() {
           </a>
           <a
             href="#contact"
-            className="tech-btn px-8 py-3 border border-blue-500/40 hover:border-blue-400 text-blue-400 hover:text-white font-medium rounded-lg transition-all hover:bg-blue-500/10"
+            className="tech-btn px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all shadow-lg shadow-blue-600/25"
           >
             Contact Me
           </a>
