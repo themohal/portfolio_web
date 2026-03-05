@@ -11,6 +11,7 @@ interface ProjectDisplay {
   tags: string[];
   live_url: string | null;
   github_url: string | null;
+  cover_image: string | null;
 }
 
 function TiltCard({ children }: { children: React.ReactNode }) {
@@ -65,6 +66,27 @@ function TiltCard({ children }: { children: React.ReactNode }) {
   );
 }
 
+function ExpandableDescription({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const needsTruncation = text.length > 150;
+
+  return (
+    <div className="mb-4">
+      <p className={`text-gray-400 text-sm leading-relaxed ${!expanded && needsTruncation ? "line-clamp-3" : ""}`}>
+        {text}
+      </p>
+      {needsTruncation && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+          className="text-blue-400 hover:text-blue-300 text-xs mt-1 transition-colors cursor-pointer"
+        >
+          {expanded ? "Show less" : "Read more"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function Projects() {
   const [projects, setProjects] = useState<ProjectDisplay[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,6 +110,10 @@ export default function Projects() {
 
     fetchProjects();
   }, []);
+
+  function ensureUrl(url: string) {
+    return url.startsWith("http") ? url : `https://${url}`;
+  }
 
   if (loading || projects.length === 0) return null;
 
@@ -117,21 +143,26 @@ export default function Projects() {
               viewport={{ once: true }}
             >
               <TiltCard>
-                <div className="holo-card group p-6 h-full flex flex-col rounded-xl bg-white/5 border border-white/10 hover:border-blue-500/30 transition-all duration-500 backdrop-blur-sm hover:bg-white/[0.07]">
-                  {/* Project header with tech indicator */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-blue-500 group-hover:animate-pulse" />
-                      <h3 className="text-xl font-semibold text-white group-hover:text-blue-300 transition-colors duration-300">
-                        {project.title}
-                      </h3>
+                <div className="holo-card group flex flex-col rounded-xl bg-white/5 border border-white/10 hover:border-blue-500/30 transition-all duration-500 backdrop-blur-sm hover:bg-white/[0.07] overflow-hidden">
+                  {/* Cover image */}
+                  {project.cover_image && (
+                    <div className="relative w-full h-48 overflow-hidden">
+                      <img
+                        src={project.cover_image}
+                        alt={project.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 to-transparent" />
                     </div>
-                    <svg className="w-5 h-5 text-gray-600 group-hover:text-blue-400 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </div>
+                  )}
 
-                  <p className="text-gray-400 text-sm mb-4 flex-grow leading-relaxed">{project.description}</p>
+                  <div className="p-6 flex flex-col flex-grow">
+                  {/* Project header with tech indicator */}
+                  <h3 className="text-xl font-semibold text-white group-hover:text-blue-300 transition-colors duration-300 mb-3">
+                    {project.title}
+                  </h3>
+
+                  <ExpandableDescription text={project.description} />
 
                   <div className="flex flex-wrap gap-2 mb-4">
                     {project.tags.map((tag) => (
@@ -147,7 +178,7 @@ export default function Projects() {
                   <div className="flex gap-4 pt-2 border-t border-white/5">
                     {project.live_url && (
                       <a
-                        href={project.live_url}
+                        href={ensureUrl(project.live_url)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1.5 group/link"
@@ -159,7 +190,7 @@ export default function Projects() {
                     )}
                     {project.github_url && (
                       <a
-                        href={project.github_url}
+                        href={ensureUrl(project.github_url)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-gray-400 hover:text-gray-300 transition-colors flex items-center gap-1.5 group/link"
@@ -168,6 +199,7 @@ export default function Projects() {
                         <span className="group-hover/link:translate-x-0.5 transition-transform">&rarr;</span>
                       </a>
                     )}
+                  </div>
                   </div>
                 </div>
               </TiltCard>
