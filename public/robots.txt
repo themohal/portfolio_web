@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://portfolio-web-nu-gules.vercel.app/sitemap.xml
