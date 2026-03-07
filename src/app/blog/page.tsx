@@ -2,8 +2,19 @@ import { createClient } from "@/lib/supabase/server";
 import { Post } from "@/types";
 import BlogListClient from "./BlogListClient";
 import Link from "next/link";
+import type { Metadata } from "next";
+
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://portfolio-web-nu-gules.vercel.app";
 
 export const revalidate = 60;
+
+export const metadata: Metadata = {
+  title: "Blog",
+  description: "Read blog posts on modern web development, tutorials, and insights.",
+  alternates: {
+    canonical: `${BASE_URL}/blog`,
+  },
+};
 
 export default async function BlogPage() {
   const supabase = await createClient();

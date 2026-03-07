@@ -27,6 +27,9 @@ export const metadata: Metadata = {
   keywords: ["Full-Stack Developer", "Next.js", "React", "TypeScript", "Portfolio"],
   authors: [{ name: "Muhammad Farjad Ali Raza" }],
   creator: "Muhammad Farjad Ali Raza",
+  alternates: {
+    canonical: BASE_URL,
+  },
   openGraph: {
     type: "website",
     locale: "en_US",

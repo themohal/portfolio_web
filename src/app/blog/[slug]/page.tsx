@@ -9,7 +9,7 @@ import type { Metadata } from "next";
 
 export const revalidate = 60;
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://portfolio.example.com";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://portfolio-web-nu-gules.vercel.app";
 
 export async function generateMetadata({
   params,
@@ -32,6 +32,9 @@ export async function generateMetadata({
   return {
     title: post.title,
     description: post.excerpt || undefined,
+    alternates: {
+      canonical: `${BASE_URL}/blog/${slug}`,
+    },
     openGraph: {
       title: post.title,
       description: post.excerpt || undefined,
