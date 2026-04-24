@@ -9,7 +9,7 @@ import type { Metadata } from "next";
 
 export const revalidate = 60;
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://portfolio-web-nu-gules.vercel.app";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://farjadportfolio.vercel.app";
 
 export async function generateMetadata({
   params,

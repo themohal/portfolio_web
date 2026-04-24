@@ -4,7 +4,7 @@ import BlogListClient from "./BlogListClient";
 import Link from "next/link";
 import type { Metadata } from "next";
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://portfolio-web-nu-gules.vercel.app";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://farjadportfolio.vercel.app";
 
 export const revalidate = 60;
 
